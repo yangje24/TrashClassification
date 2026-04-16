@@ -1,6 +1,6 @@
 description: Ultralytics YOLO26n model trained on /home/yangje/Garbage_Classification/TACO_YOLO/data.yaml
 author: Ultralytics
-date: '2026-04-01T12:38:42.223212'
+date: '2026-04-16T13:16:26.905544'
 version: 8.4.31
 license: AGPL-3.0 License (https://ultralytics.com/license)
 docs: https://docs.ultralytics.com
@@ -8,8 +8,8 @@ stride: 32
 task: detect
 batch: 1
 imgsz:
-- 640
-- 640
+- 1024
+- 1024
 names:
   0: Aluminium foil
   1: Bottle cap

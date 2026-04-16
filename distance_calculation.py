@@ -1,18 +1,17 @@
 import cv2
 import time
-from collections import deque
 from ultralytics import YOLO
 
 # --- CONFIGURATION ---
-FOCAL_LENGTH = 600 
-REAL_WIDTH = 6 
-FRAME_GAP = 10  
 CONF_LEVEL = 0.3 
+UPDATE_INTERVAL = 0.1  # 100 ms interval for checking movement
+JITTER_THRESHOLD = 2.0 # Minimum pixel change required to trigger a status update
+SMOOTHING_FACTOR = 0.4 # Between 0 and 1. Lower = smoother but slightly delayed
 
 model = YOLO("best_ncnn_model") 
 cap = cv2.VideoCapture(0)
 
-# object_memory[id] stores: {"history": deque, "max_speed": float}
+# object_memory[id] stores: {"last_time": float, "last_width": float, "smoothed_width": float, "status": str}
 object_memory = {}
 
 while cap.isOpened():
@@ -29,45 +28,57 @@ while cap.isOpened():
         for i, obj_id in enumerate(ids):
             x1, y1, x2, y2 = boxes[i]
             pixel_width = x2 - x1
-            if pixel_width <= 0: continue
             
-            current_dist = (REAL_WIDTH * FOCAL_LENGTH) / pixel_width
+            if pixel_width <= 0: continue
             obj_id = int(obj_id)
 
+            # --- INITIALIZE NEW OBJECT ---
             if obj_id not in object_memory:
                 object_memory[obj_id] = {
-                    "history": deque(maxlen=FRAME_GAP + 1),
-                    "max_speed": 0.0
+                    "last_time": current_time,
+                    "last_width": pixel_width,
+                    "smoothed_width": pixel_width,
+                    "status": "Detecting..."
                 }
             
             obj_data = object_memory[obj_id]
-            obj_data["history"].append((current_dist, current_time))
+            
+            # --- SMOOTH THE WIDTH TO PREVENT BOUNDING BOX JITTER ---
+            obj_data["smoothed_width"] = (SMOOTHING_FACTOR * pixel_width) + ((1 - SMOOTHING_FACTOR) * obj_data["smoothed_width"])
 
-            current_speed = 0
-            if len(obj_data["history"]) > FRAME_GAP:
-                old_dist, old_time = obj_data["history"][0]
-                delta_d = abs(old_dist - current_dist) 
-                delta_t = current_time - old_time
+            # --- PROCESS EVERY 100ms ---
+            time_elapsed = current_time - obj_data["last_time"]
+            
+            if time_elapsed >= UPDATE_INTERVAL:
+                # Compare the smoothed width from now vs 100ms ago
+                width_diff = obj_data["smoothed_width"] - obj_data["last_width"]
                 
-                if delta_t > 0:
-                    current_speed = delta_d / delta_t
-                    if current_speed > obj_data["max_speed"]:
-                        obj_data["max_speed"] = current_speed
-
-            # --- PROJECTION ---
-            projected_travel = obj_data["max_speed"] * 1.0 
-
-            # --- PRINT STATEMENT ---
-            if projected_travel > 0:
-                print(f"[ID {obj_id}] Current Dist: {current_dist:.1f}cm | Peak Spd: {obj_data['max_speed']:.1f}cm/s | Est. Travel (1s): {projected_travel:.1f}cm")
+                if width_diff > JITTER_THRESHOLD:
+                    obj_data["status"] = "Moving Closer"
+                    color = (0, 0, 255) # Red
+                elif width_diff < -JITTER_THRESHOLD:
+                    obj_data["status"] = "Moving Away"
+                    color = (255, 0, 0) # Blue
+                else:
+                    obj_data["status"] = "Stationary / Lateral"
+                    color = (0, 255, 0) # Green
+                
+                # Reset the baseline for the next 100ms interval
+                obj_data["last_time"] = current_time
+                obj_data["last_width"] = obj_data["smoothed_width"]
 
             # --- VISUALS ---
-            color = (255, 0, 255) 
-            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), color, 2)
-            cv2.putText(frame, f"Proj Travel: {projected_travel:.1f}cm", (int(x1), int(y1)-10), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
+            # Default color fallback if status hasn't evaluated yet
+            display_color = (0, 255, 0) 
+            if obj_data["status"] == "Moving Closer": display_color = (0, 0, 255)
+            elif obj_data["status"] == "Moving Away": display_color = (255, 0, 0)
 
-    cv2.imshow("Peak Speed Projection", frame)
+            # Draw box and status text
+            cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), display_color, 2)
+            cv2.putText(frame, f"ID {obj_id}: {obj_data['status']}", (int(x1), int(y1)-10), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, display_color, 2)
+
+    cv2.imshow("Direction Tracker", frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 

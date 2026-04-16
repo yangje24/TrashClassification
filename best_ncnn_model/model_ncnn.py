@@ -4,12 +4,12 @@ import torch
 
 def test_inference():
     torch.manual_seed(0)
-    in0 = torch.rand(1, 3, 640, 640, dtype=torch.float)
+    in0 = torch.rand(1, 3, 1024, 1024, dtype=torch.float)
     out = []
 
     with ncnn.Net() as net:
-        net.load_param("runs/detect/train2/weights/best_ncnn_model/model.ncnn.param")
-        net.load_model("runs/detect/train2/weights/best_ncnn_model/model.ncnn.bin")
+        net.load_param("runs/detect/train8/weights/best_ncnn_model/model.ncnn.param")
+        net.load_model("runs/detect/train8/weights/best_ncnn_model/model.ncnn.bin")
 
         with net.create_extractor() as ex:
             ex.input("in0", ncnn.Mat(in0.squeeze(0).numpy()).clone())
