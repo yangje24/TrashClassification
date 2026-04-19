@@ -11,7 +11,7 @@ SMOOTHING_FACTOR = 0.4 # Between 0 and 1. Lower = smoother but slightly delayed
 
 # --- SERIAL & MOVEMENT CONFIGURATION ---
 SERIAL_PORT = "COM3"   # Change to your port (e.g., '/dev/ttyUSB0' on Linux/Mac, 'COM3' on Windows)
-BAUD_RATE = 9600
+BAUD_RATE = 9600c
 CENTER_DEADZONE = 0.15 # 15% of the frame width acts as a deadzone to prevent left/right jitter
 SMALL_THRESHOLD = 0.3  # If the object's width is less than 30% of the frame width, it is considered "small"
 
@@ -130,3 +130,53 @@ cap.release()
 if ser:
     ser.close()
 cv2.destroyAllWindows()
+
+
+# 3. Object Lock + Tracking
+# Once detected:
+# Assign an ID
+# Switch to tracking mode
+# Use:
+# Deep SORT or a lighter tracker like:
+# SORT
+
+# 4. Throw Detection (this is critical)
+# You need a state transition:
+# HOLDING → THROWN → LANDED
+# if distance(hand, object) increases rapidly AND object velocity > threshold:
+#     state = THROWN
+
+# 5. Trajectory Prediction (for camera movement)
+# Once in THROWN state:
+# Track object center across frames
+# Fit a parabola (projectile motion)
+# Use:
+# Basic physics model (constant gravity)
+# Or just fit a quadratic curve to points:
+# x(t), y(t)
+# You don’t need perfect physics—just a short-term prediction.
+
+# 6. Moving Camera Control
+# camera is stuck to the robot, so view changes as robot moves towards the predicted location
+# Target = predicted landing point
+# Approaches:
+# Option B: Mobile Camera (robot)
+# Convert image coords → world coords
+# Use:
+# Homography (if plane known)
+# Or depth (stereo / RGB-D)
+# Then:
+# predicted landing → move robot → re-acquire object
+
+
+# ⚠️ Hard Parts (don’t underestimate these)
+# 1. Re-identification after occlusion
+# If the object disappears mid-flight:
+# Kalman filter prediction (built into SORT/DeepSORT)
+# Keep track alive for ~0.5–1s without detection
+
+# 2. Camera motion + tracking instability
+# Moving camera = harder tracking
+# Fix:
+# Use image stabilization OR
+# Track in camera frame, not world frame

@@ -4,7 +4,7 @@ from ultralytics import YOLO
 
 print("1. Loading AI Brain (NCNN Model)...")
 
-model = YOLO("best_ncnn_model")
+model = YOLO("testmod")
 
 print("2. Initializing Pi Camera...")
 picam2 = Picamera2()
