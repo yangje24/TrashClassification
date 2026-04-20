@@ -11,7 +11,7 @@ SMOOTHING_FACTOR = 0.4 # Between 0 and 1. Lower = smoother but slightly delayed
 
 # --- SERIAL & MOVEMENT CONFIGURATION ---
 SERIAL_PORT = "COM3"   # Change to your port (e.g., '/dev/ttyUSB0' on Linux/Mac, 'COM3' on Windows)
-BAUD_RATE = 9600c
+BAUD_RATE = 9600
 CENTER_DEADZONE = 0.15 # 15% of the frame width acts as a deadzone to prevent left/right jitter
 SMALL_THRESHOLD = 0.3  # If the object's width is less than 30% of the frame width, it is considered "small"
 
