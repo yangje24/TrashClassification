@@ -129,7 +129,7 @@ options = vision.HandLandmarkerOptions(base_options=base_options,
 detector = vision.HandLandmarker.create_from_options(options)
 
 # 2. YOLO trash detector
-MODEL_PATH = "best_ncnn_model"
+MODEL_PATH = "best.pt"
 print("Loading YOLO model from", MODEL_PATH)
 yolo_model = YOLO(MODEL_PATH, task="detect")
 
@@ -304,56 +304,3 @@ try:
 finally:
     cap.release()
     cv2.destroyAllWindows()
-
-
-# ── Notes ──────────────────────────────────────────────────────────────────
-# things to test:
-
-# consider edge detection to blur out background
-# object tracking w SORT model, ID w trash class
-
-# 3. Object Lock + Tracking
-# Once detected:
-# Assign an ID
-# Switch to tracking mode
-# Use: Deep SORT or SORT
-
-# 4. Throw Detection (this is critical)
-# You need a state transition:
-# HOLDING → THROWN → LANDED
-# if distance(hand, object) increases rapidly AND object velocity > threshold:
-#     state = THROWN
-
-# 5. Trajectory Prediction (for camera movement)
-# Once in THROWN state:
-# Track object center across frames
-# Fit a parabola (projectile motion)
-# Use:
-# Basic physics model (constant gravity)
-# Or just fit a quadratic curve to points:
-# x(t), y(t)
-# You don't need perfect physics—just a short-term prediction.
-
-# 6. Moving Camera Control
-# camera is stuck to the robot, so view changes as robot moves towards the predicted location
-# Target = predicted landing point
-# Approaches:
-# Option B: Mobile Camera (robot)
-# Convert image coords → world coords
-# Use:
-# Homography (if plane known)
-# Or depth (stereo / RGB-D)
-# Then:
-# predicted landing → move robot → re-acquire object
-
-# ⚠️ Hard Parts (don't underestimate these)
-# 1. Re-identification after occlusion
-# If the object disappears mid-flight:
-# Kalman filter prediction (built into SORT/DeepSORT)
-# Keep track alive for ~0.5–1s without detection
-
-# 2. Camera motion + tracking instability
-# Moving camera = harder tracking
-# Fix:
-# Use image stabilization OR
-# Track in camera frame, not world frame

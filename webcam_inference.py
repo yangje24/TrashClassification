@@ -96,7 +96,7 @@ detector = vision.HandLandmarker.create_from_options(options)
 
 # 2. ROI
 
-MODEL_PATH = "best_ncnn_model"#"testmod/best.pt"
+MODEL_PATH = "best.pt" #best_ncnn_model"#"testmod/best.pt"
 
 print("Loading model from", MODEL_PATH)
 model = YOLO(MODEL_PATH, task="detect")
