@@ -392,10 +392,6 @@ finally:
     cap.release()
     cv2.destroyAllWindows()
 
-
 # things to test:
 # try w clip model
-
-# object tracking w SORT model, ID w trash class
-# camera is facing upward, detect when held marked object is thrown.
-# predict based on timing from captured frame, where object will land, move camera (stationary facing upward on bot) to the place where facing up directly to the trash to catch.
+# track and move to hand position
