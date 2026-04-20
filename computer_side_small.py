@@ -5,7 +5,8 @@ import traceback
 from ultralytics import YOLO
 
 print("Loading YOLO model...")
-model = YOLO("best_ncnn_model") 
+model = YOLO("best.pt")
+
 
 context = zmq.Context()
 socket = context.socket(zmq.REP)
@@ -26,7 +27,7 @@ while True:
             continue
 
         # 3. Run inference
-        results = model(frame, verbose=False)
+        results = model(frame, verbose=False, device=0)
         detections = []
         
         # 4. Extract data and draw on the frame

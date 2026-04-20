@@ -4,7 +4,7 @@ import serial
 from ultralytics import YOLO
 
 # --- CONFIGURATION ---
-CONF_LEVEL = 0.3 
+CONF_LEVEL = 0.3
 UPDATE_INTERVAL = 0.1  # 100 ms interval for checking movement/sending commands
 JITTER_THRESHOLD = 2.0 # Minimum pixel change required to trigger a status update
 SMOOTHING_FACTOR = 0.4 # Between 0 and 1. Lower = smoother but slightly delayed
@@ -23,7 +23,7 @@ except Exception as e:
     print(f"Warning: Could not open serial port {SERIAL_PORT}. Error: {e}")
     ser = None
 
-model = YOLO("best_ncnn_model") 
+model = YOLO("best_medium_classes_removed.pt") 
 cap = cv2.VideoCapture(0)
 
 # object_memory[id] stores: {"last_time": float, "last_width": float, "smoothed_width": float, "status": str}
@@ -38,11 +38,12 @@ while cap.isOpened():
     deadzone_pixels = frame_width * CENTER_DEADZONE
 
     current_time = time.time()
-    results = model.track(frame, persist=True, conf=CONF_LEVEL, verbose=False)
+    results = model.track(frame, conf=CONF_LEVEL, verbose=False, device=0)
 
     if results[0].boxes is not None and results[0].boxes.id is not None:
         boxes = results[0].boxes.xyxy.cpu().numpy()
         ids = results[0].boxes.id.int().cpu().numpy()
+        classes = results[0].boxes.cls.int().cpu().numpy() # <-- NEW: Extract class IDs
         
         # To avoid sending conflicting serial commands for multiple objects,
         # we will only track and send commands based on the FIRST object detected in the list.
@@ -50,6 +51,9 @@ while cap.isOpened():
 
         for i, obj_id in enumerate(ids):
             x1, y1, x2, y2 = boxes[i]
+            cls_id = classes[i]                          # <-- NEW: Get class ID for this specific box
+            class_name = model.names[cls_id]             # <-- NEW: Map class ID to its string name
+            
             pixel_width = x2 - x1
             obj_center_x = (x1 + x2) / 2
             
@@ -57,6 +61,7 @@ while cap.isOpened():
             obj_id = int(obj_id)
 
             # --- INITIALIZE NEW OBJECT ---
+            # We still use obj_id for tracking memory so the tracker knows it's the same object over time
             if obj_id not in object_memory:
                 object_memory[obj_id] = {
                     "last_time": current_time,
@@ -119,7 +124,9 @@ while cap.isOpened():
 
             # Draw box and status text
             cv2.rectangle(frame, (int(x1), int(y1)), (int(x2), int(y2)), display_color, 2)
-            cv2.putText(frame, f"ID {obj_id}: {obj_data['status']}", (int(x1), int(y1)-10), 
+            
+            # <-- NEW: Print class_name instead of obj_id here
+            cv2.putText(frame, f"{class_name}: {obj_data['status']}", (int(x1), int(y1)-10), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, display_color, 2)
 
     cv2.imshow("Direction Tracker", frame)
