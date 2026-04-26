@@ -13,3 +13,5 @@ The different .pt files are trained weights for different YOLO models and the na
 The remove_labels and remove_images.py in the training branch were used to try and remove some less useful annotations from the dataset
 
 convert_model.py was used to convert models to an ncnn model which is lighter weight and only uses the CPU which was useful when we wanted to run the models on the Raspberry Pi
+
+training.py is the python code used to train the YOLO 26 models
