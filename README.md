@@ -1,6 +1,6 @@
 This is the repository for our EECS 498 Mobile Trash can for Waste Classification project.
 The training branch contains the code and some of the settings used to train the YOLO 26 models.
-The additional branch contains the code used to run the inference and the Raspberry Pi side code.
+The main branch contains the code used to run the inference and the Raspberry Pi side code.
 
 computer_yoloclip.py is the code used during inference and stream_server_small.py is the Raspberry Pi stream server code
 
@@ -15,3 +15,5 @@ The remove_labels and remove_images.py in the training branch were used to try a
 convert_model.py was used to convert models to an ncnn model which is lighter weight and only uses the CPU which was useful when we wanted to run the models on the Raspberry Pi
 
 training.py is the python code used to train the YOLO 26 models
+
+To run, connect the Raspberry Pi and computer to the same network and change the IP Address in stream_server_small.py to the IPv4 address of the computer
